@@ -1,0 +1,120 @@
+---
+title: "Step Data Assignment"
+author: "Helen Levy-Myers"
+date: "November 21, 2017"
+output: html_document
+---
+This assignment analysizes daily step data of a single anonymous individual during the months of October and November 2012. The data was collected using a personal activity monitoring device, such as a Fitbit or Nike Fuelband. The data consists of the number of steps taken during a 5-minute interval, the date, and ID for each 5 minute interval. 
+
+This assignment follows Literate Statistical Programming standards, which involve weaving human readable text and tangling it with machine readable code in the same document. Under each heading, there will be the R code, the output and some analysis. The data was downloaded on November 16, 2017 and the analysis and coding was done entirely by Helen Levy-Myers. All errors and omissions are entirely the responsiblity of Helen Levy-Myers, the author. 
+
+##Setting up and reading in the data
+```{r setup, include=TRUE}
+library(dplyr)
+library(ggplot2)
+library(tidyverse)
+library(lubridate)
+library(cowplot)
+
+setwd("C:/Users/hlevy/Documents/R/StepData/repdata%2Fdata%2Factivity")
+
+#read Step Data
+StepData <- read.csv("~/R/StepData/repdata%2Fdata%2Factivity/activity.csv")
+knitr::opts_chunk$set(echo = TRUE)
+```
+##Total Number of Steps Taken Daily
+
+The assignment asked several questions about how many steps the individual took daily. Many health authorities recommend that individuals take 10,000 steps every day and the first set of questions asked to calculate the total number of steps taken daily, the mean and median (middle number) number of steps taken daily and then make a histogram of the results. Because the median is a single number in the exact middle of the daily data, it seems to often represent the person was sitting and eating lunch at noon each day which is most likely why there is not much data there.  
+
+```{r}
+#Calculate total number, mean and median of steps taken per day
+DailySteps <- group_by(StepData, as.Date(date)) 
+DailySteps <- summarize(DailySteps, eachDay = sum(steps, na.rm = TRUE), 
+          eachDayMean = mean(steps, na.rm = TRUE), eachDayMedian = median(steps, na.rm = TRUE))
+DailySteps
+#histogram of total steps taken each day
+hist(DailySteps$eachDay, xaxt = NULL, xlab = "Daily Steps", yaxt = NULL, ylab = "Number of Days",
+     main = "Total Number of Steps Taken Each Day")
+```
+
+##Average Daily Activity Pattern
+The assignment asked for an analysis of daily activity. Does this individual take more steps in the morning, midday, or in the evening? It seems that the person usually takes double the steps in early morning than at any other time. The highest two month average step count taken in one five minute interval is 206.17 steps during the 5 Minute Interval #835 out of the total of 2355 intervals. 
+```{r}
+#Calculate the average daily activity pattern & which 5 minute interval ID has the highest number of steps
+MinuteSteps <- group_by(StepData, interval)
+MinuteSteps <- summarise(MinuteSteps, StepsPerInterval = mean(steps, na.rm = TRUE))
+MinuteSteps
+MaxRow <- which.max(MinuteSteps$StepsPerInterval)
+MinuteSteps[MaxRow, ]
+
+#Make a time series plot of the 5 minute intervals of the average number of steps across all days
+plot(x = MinuteSteps$interval, y = MinuteSteps$StepsPerInterval, type = "l", ylim = c(0, 225), 
+     xaxt = NULL, xlab = "5 Minute Interval ID", yaxt = NULL, ylab = "Number of Average Steps Per Interval",
+     main = "Average Number of Steps Taken Throughout the Day")
+```
+
+##Imputed Missing Values
+
+The data has numerous NA values; a calculation shows it to be 2304 NA values, about 13.1%. It was decided to replace the NAs with the average interval data calculated in the previous section. A sum, mean and median for each day was calculated with the NAs replaced and a histogram was created to compare the original data with missing data and the data with imputed values. The data without NA has signficantly more days with 10,000 steps and fewer days with less steps.
+
+```{r}
+#Imputing missing values
+#Find the number of missing values
+sum(is.na(StepData$steps))
+```
+```{r, results="hide"}
+#Take the mean for each interval calculated above and use it to replace NAs
+MinuteSteps #mean calculated in previous section
+NoBlankData <- StepData #create separate database for analysis
+as.list(MinuteSteps)
+```
+```{r}
+#Calculate sum, mean, and median for data with NAs replaced
+NoBlankData1 <- NoBlankData %>% replace_na(list(steps = MinuteSteps$StepsPerInterval))
+NoBlankSteps <- group_by(NoBlankData1, as.Date(date)) 
+NoBlankSteps <- summarize(NoBlankSteps, NoBlankDay = sum(steps, na.rm = TRUE), 
+                        NoBlankDayMean = mean(steps, na.rm = TRUE), NoBlankDayMedian = median(steps, na.rm = TRUE))
+NoBlankSteps
+
+hist(NoBlankSteps$NoBlankDay, xaxt = NULL, xlab = "Daily Steps With Imputed Interval Values", yaxt = NULL, ylab = "Number of Days",
+     main = "Total Number of Steps Taken Each Day with Imputed Values")
+```
+
+##Activity Patterns on Weekdays and the Weekend
+
+Another way the assignment wanted to look at step activity patterns was between the work week, defined as Monday to Friday and the weekend, as Saturday and Sunday. The NA values were replaced using the formula in the imputed values section above. Then the data frame was separated into two dataframes, the work week and weekend. Finally the mean was calculated for the 5 minute interval id in the two separate data frames. The most significant difference is that many more steps on average are made during the work week and there is a greater range of steps made. One could make a guess that this individual walks to work or walks to a bus stop and then to a place of work. On the weekends, the individual might rest on a couch, not walking much, which is reflected in the data. 
+
+
+```{r}
+#Looking at differences between weekday and weekend activity
+DayofWeek <- NoBlankSteps #create separate database with imputed missing values for analysis
+DayofWeek <- transform(DayofWeek, exactDay = weekdays( `as.Date(date)`))
+DayofWeek <- transform(DayofWeek, minuteinterval = StepData$interval)
+DayofWeek1 <- filter(DayofWeek, exactDay == "Monday" | exactDay == "Tuesday" | exactDay == "Wednesday" | 
+                             exactDay == "Thursday" | exactDay == "Friday")
+DayofWeek1 <- aggregate(NoBlankDay ~ minuteinterval, subset = minuteinterval, data = DayofWeek1, mean)
+DayofWeek2 <- filter(DayofWeek, exactDay == "Sunday" | exactDay == "Saturday")
+DayofWeek2 <- aggregate(NoBlankDay ~ minuteinterval, subset = minuteinterval, data = DayofWeek2, mean)
+       
+#plot graphs showing activity on weekends versus the workweek
+Workweekplot <- ggplot(data = DayofWeek1, aes(x= minuteinterval, y = NoBlankDay)) +
+        geom_line() + 
+        ylim(5000, 20000) +
+        labs(x = "5 Minute Interval ID") +
+        labs(y = "Average Steps Per Interval") +
+        theme(axis.text.y = element_text(size = 8)) +
+        labs(main = "Average Number of Steps Taken (Work Week)")
+
+Weekendplot <- ggplot(data = DayofWeek2, aes(x= minuteinterval, y = NoBlankDay)) +
+        geom_line() +
+        ylim(5000, 20000) +
+        labs(x = "5 Minute Interval ID") +
+        labs(y = "Average Steps Per Interval") +
+        theme(axis.text.y = element_text(size = 8)) +
+        labs(main = "Average Number of Steps(Weekend)")
+
+plot_grid(Workweekplot, Weekendplot, labels = c("Work Week Step Activity", "Weekend Step Activity"), nrow = 2)
+
+
+
+
