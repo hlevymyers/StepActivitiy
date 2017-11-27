@@ -1,0 +1,10 @@
+name: Publish Document
+title:
+username:
+account: rpubs
+server: rpubs.com
+hostUrl: rpubs.com
+appId: https://api.rpubs.com/api/v1/document/332681/fa2558119ae54f839afdbd5483da837b
+bundleId: https://api.rpubs.com/api/v1/document/332681/fa2558119ae54f839afdbd5483da837b
+url: http://rpubs.com/hlevymyers/332681
+when: 1511278301.26377
