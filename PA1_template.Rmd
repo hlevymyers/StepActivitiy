@@ -17,10 +17,8 @@ library(tidyverse)
 library(lubridate)
 library(cowplot)
 
-setwd("C:/Users/hlevy/Documents/R/StepData/repdata%2Fdata%2Factivity")
-
 #read Step Data
-StepData <- read.csv("~/R/StepData/repdata%2Fdata%2Factivity/activity.csv")
+StepData <- read.csv("./activity.csv")
 knitr::opts_chunk$set(echo = TRUE)
 ```
 ##Total Number of Steps Taken Daily

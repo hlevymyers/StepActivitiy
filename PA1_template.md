@@ -63,10 +63,8 @@ library(cowplot)
     ##     ggsave
 
 ``` r
-setwd("C:/Users/hlevy/Documents/R/StepData/repdata%2Fdata%2Factivity")
-
 #read Step Data
-StepData <- read.csv("~/R/StepData/repdata%2Fdata%2Factivity/activity.csv")
+StepData <- read.csv("./activity.csv")
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
