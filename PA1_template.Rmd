@@ -3,7 +3,7 @@ title: "Step Data Assignment"
 author: "Helen Levy-Myers"
 date: "November 26, 2017"
 output: 
-  github_document
+  html_document
 ---
 This assignment analysizes daily step data of a single anonymous individual during the months of October and November 2012. The data was collected using a personal activity monitoring device, such as a Fitbit or Nike Fuelband. The data consists of the number of steps taken during a 5-minute interval, the date, and ID for each 5 minute interval. 
 
